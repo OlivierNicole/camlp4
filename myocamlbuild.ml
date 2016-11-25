@@ -241,7 +241,7 @@ let () =
 
     let camlp4lib_cma = p4 "camlp4lib.cma" in
     let camlp4lib_cmxa = p4 "camlp4lib.cmxa" in
-    let camlp4lib_lib = p4 ("camlp4lib"^C.ext_lib) in
+    let camlp4lib_lib = p4 ("camlp4lib" ^ C.ext_lib) in
     let camlp4lib_mllib = p4 ("camlp4lib.mllib") in
 
     let special_modules =
