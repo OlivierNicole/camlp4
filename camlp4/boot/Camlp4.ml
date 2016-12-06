@@ -15378,6 +15378,7 @@ module Struct =
             type t =
               Longident.t =
                 | Lident of string | Ldot of t * string | Lapply of t * t
+                | Lglobal of string | Lfrommacro of t * string * int
             
             let last =
               function
@@ -16752,7 +16753,7 @@ module Struct =
               | SgExt (loc, n, t, sl) ->
                   (mksig loc
                      (Psig_value
-                        (mkvalue_desc loc (with_loc n loc) t
+                        (Nonmacro Nonstatic, mkvalue_desc loc (with_loc n loc) t
                            (list_of_meta_list sl)))) ::
                     l
               | SgInc (loc, mt) ->
@@ -16767,15 +16768,15 @@ module Struct =
               | SgMod (loc, n, mt) ->
                   (mksig loc
                      (Psig_module
-                        {
+                        (Nonstatic, {
                           pmd_loc = mkloc loc;
                           pmd_name = with_loc n loc;
                           pmd_type = module_type mt;
                           pmd_attributes = [];
-                        })) ::
+                        }))) ::
                     l
               | SgRecMod (loc, mb) ->
-                  (mksig loc (Psig_recmodule (module_sig_binding mb []))) ::
+                  (mksig loc (Psig_recmodule (Nonstatic, module_sig_binding mb []))) ::
                     l
               | SgMty (loc, n, mt) ->
                   let si =
@@ -16814,7 +16815,7 @@ module Struct =
                   in (mksig loc ty) :: l
               | SgVal (loc, n, t) ->
                   (mksig loc
-                     (Psig_value (mkvalue_desc loc (with_loc n loc) t []))) ::
+                     (Psig_value (Nonmacro Nonstatic, mkvalue_desc loc (with_loc n loc) t []))) ::
                     l
               | Ast.SgAnt (loc, _) -> error loc "antiquotation in sig_item"
             and module_sig_binding x acc =
@@ -16965,15 +16966,15 @@ module Struct =
               | StMod (loc, n, me) ->
                   (mkstr loc
                      (Pstr_module
-                        {
+                        (Nonstatic, {
                           pmb_loc = mkloc loc;
                           pmb_name = with_loc n loc;
                           pmb_expr = module_expr me;
                           pmb_attributes = [];
-                        })) ::
+                        }))) ::
                     l
               | StRecMod (loc, mb) ->
-                  (mkstr loc (Pstr_recmodule (module_str_binding mb []))) ::
+                  (mkstr loc (Pstr_recmodule (Nonstatic, module_str_binding mb []))) ::
                     l
               | StMty (loc, n, mt) ->
                   let si =
@@ -17011,7 +17012,7 @@ module Struct =
                      | `Ext e -> Pstr_typext e)
                   in (mkstr loc ty) :: l
               | StVal (loc, rf, bi) ->
-                  (mkstr loc (Pstr_value ((mkrf rf), (binding bi [])))) :: l
+                  (mkstr loc (Pstr_value (Nonstatic, (mkrf rf), (binding bi [])))) :: l
               | Ast.StAnt (loc, _) -> error loc "antiquotation in str_item"
             and class_type =
               function
