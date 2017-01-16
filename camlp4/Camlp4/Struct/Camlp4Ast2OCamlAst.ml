@@ -50,12 +50,16 @@ module Longident = struct
   type t = Longident.t ==
            [ Lident of string
            | Ldot of t and string
-           | Lapply of t and t ];
+           | Lapply of t and t
+           | Lglobal of string
+           | Lfrommacro of t and string and int ];
 
   value last = fun
     [ Lident s -> s
     | Ldot _ s -> s
-    | Lapply _ _ -> failwith "Longident.last" ];
+    | Lapply _ _
+    | Lglobal _
+    | Lfrommacro _ -> failwith "Longident.last" ];
 end;
 
 module Make (Ast : Sig.Camlp4Ast) = struct
@@ -1161,13 +1165,13 @@ value varify_constructors var_names =
                                    ; pext_loc        = mkloc loc })
          :: l]
     | SgExc _ _ -> assert False (*FIXME*)
-    | SgExt loc n t sl -> [mksig loc (Psig_value (mkvalue_desc loc (with_loc n loc) t (list_of_meta_list sl))) :: l]
+    | SgExt loc n t sl -> [mksig loc (Psig_value (Nonmacro Nonstatic, mkvalue_desc loc (with_loc n loc) t (list_of_meta_list sl))) :: l]
     | SgInc loc mt -> [mksig loc (Psig_include {pincl_mod=module_type mt;
                                                 pincl_attributes=[];
                                                 pincl_loc = mkloc loc}) :: l]
-    | SgMod loc n mt -> [mksig loc (Psig_module {pmd_loc=mkloc loc; pmd_name=with_loc n loc; pmd_type=module_type mt; pmd_attributes=[]}) :: l]
+    | SgMod loc n mt -> [mksig loc (Psig_module (Nonstatic, {pmd_loc=mkloc loc; pmd_name=with_loc n loc; pmd_type=module_type mt; pmd_attributes=[]})) :: l]
     | SgRecMod loc mb ->
-        [mksig loc (Psig_recmodule (module_sig_binding mb [])) :: l]
+        [mksig loc (Psig_recmodule (Nonstatic, module_sig_binding mb [])) :: l]
     | SgMty loc n mt ->
         let si =
           match mt with
@@ -1188,7 +1192,7 @@ value varify_constructors var_names =
         | `Ext e -> Psig_typext e ]
       in
       [mksig loc ty :: l]
-    | SgVal loc n t -> [mksig loc (Psig_value (mkvalue_desc loc (with_loc n loc) t [])) :: l]
+    | SgVal loc n t -> [mksig loc (Psig_value (Nonmacro Nonstatic, mkvalue_desc loc (with_loc n loc) t [])) :: l]
     | <:sig_item@loc< $anti:_$ >> -> error loc "antiquotation in sig_item" ]
   and module_sig_binding x acc =
     match x with
@@ -1272,9 +1276,9 @@ value varify_constructors var_names =
     | StInc loc me -> [mkstr loc (Pstr_include {pincl_mod=module_expr me;
                                                 pincl_attributes=[];
                                                 pincl_loc=mkloc loc}) :: l]
-    | StMod loc n me -> [mkstr loc (Pstr_module {pmb_loc=mkloc loc; pmb_name=with_loc n loc;pmb_expr=module_expr me;pmb_attributes=[]}) :: l]
+    | StMod loc n me -> [mkstr loc (Pstr_module (Nonstatic, {pmb_loc=mkloc loc; pmb_name=with_loc n loc;pmb_expr=module_expr me;pmb_attributes=[]})) :: l]
     | StRecMod loc mb ->
-        [mkstr loc (Pstr_recmodule (module_str_binding mb [])) :: l]
+        [mkstr loc (Pstr_recmodule (Nonstatic, module_str_binding mb [])) :: l]
     | StMty loc n mt ->
         let si =
           match mt with
@@ -1298,7 +1302,7 @@ value varify_constructors var_names =
       in
       [mkstr loc ty :: l]
     | StVal loc rf bi ->
-        [mkstr loc (Pstr_value (mkrf rf) (binding bi [])) :: l]
+        [mkstr loc (Pstr_value Nonstatic (mkrf rf) (binding bi [])) :: l]
     | <:str_item@loc< $anti:_$ >> -> error loc "antiquotation in str_item" ]
   and class_type =
     fun

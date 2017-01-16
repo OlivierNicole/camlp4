@@ -364,7 +364,7 @@ and needs_semi =
   fun
   [ Osig_class _ _ _ _ rs
   | Osig_class_type _ _ _ _ rs
-  | Osig_module _ _ rs
+  | Osig_module _ _ rs _
   | Osig_type _ rs -> rs <> Orec_next
   | Osig_typext _ _
   | Osig_modtype _ _
@@ -402,9 +402,9 @@ and print_out_sig_item ppf =
   | Osig_modtype name mty ->
       fprintf ppf "@[<2>module type %s =@ %a@]" name
         Toploop.print_out_module_type.val mty
-  | Osig_module name (Omty_alias id) Orec_not ->
+  | Osig_module name (Omty_alias id) Orec_not _ ->
       fprintf ppf "@[<2>module %s :@ %a@]" name print_ident id
-  | Osig_module name mty rs ->
+  | Osig_module name mty rs _ ->
       fprintf ppf "@[<2>%s %s :@ %a@]"
         (match rs with [ Orec_not -> "module"
                        | Orec_first -> "module rec"
@@ -414,10 +414,10 @@ and print_out_sig_item ppf =
       print_out_type_decl
           (if rs = Orec_next then "and" else "type")
           ppf td
-  | Osig_value { oval_name  = name
+  | Osig_value (_, { oval_name  = name
                ; oval_type  = ty
                ; oval_prims = prims
-               ; _ } ->
+               ; _ }) ->
       let kwd = if prims = [] then "value" else "external" in
       let pr_prims ppf =
         fun
